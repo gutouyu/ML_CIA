@@ -218,6 +218,7 @@ label = tf.placeholder(dtype=tf.float16, shape=[None,1], name='label')
 # Sparse Features -> Dense Embedding
 embeddings_origin = tf.nn.embedding_lookup(weights['feature_embedding'], ids=feat_index) # [None, field_size, embedding_size]
 
+feat_value_reshape = tf.reshape(tensor=feat_value, shape=[-1, config.field_size, 1]) # -1 * field_size * 1
 
 # --------- 一维特征 -----------
 y_first_order = tf.nn.embedding_lookup(weights['feature_bias'], ids=feat_index) # [None, field_size, 1]
@@ -225,7 +226,6 @@ w_mul_x = tf.multiply(y_first_order, feat_value_reshape) # [None, field_size, 1]
 y_first_order = tf.reduce_sum(input_tensor=w_mul_x, axis=2) # [None, field_size]
 
 # --------- 二维组合特征 ----------
-feat_value_reshape = tf.reshape(tensor=feat_value, shape=[-1, config.field_size, 1]) # -1 * field_size * 1
 embeddings = tf.multiply(embeddings_origin, feat_value_reshape) # [None, field_size, embedding_size] multiply不是矩阵相乘，而是矩阵对应位置相乘。这里应用了broadcast机制。
 
 # sum_square part 先sum，再square
