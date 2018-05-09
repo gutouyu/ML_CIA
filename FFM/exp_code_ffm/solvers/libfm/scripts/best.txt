@@ -1,0 +1,32 @@
+///////////////////////////////////////////////////////////////////////////////
+Criteo
+///////////////////////////////////////////////////////////////////////////////
+score (k=40): iter:   49 time: 1.312e+05 obj:   17450012 ll(train): 0.43065228 ll(test): 0.44854707
+cmd:
+    ./libFM -task c -method als -regular 0,1,40 -dim 1,1,40 -iter 20 -train tr.r0.gbdt0.no.fm -test va.r0.gbdt0.no.fm -out va.r0.gbdt0.no.fm.iter20.k100.out
+/////////////
+score (k=100): iter:   49 time: 2.796e+05 obj:   17317390 ll(train): 0.42375641 ll(test):  0.4480636
+    ./libFM -task c -method als -regular 0,1,40 -dim 1,1,100 -iter 20 -train tr.r0.gbdt0.no.fm -test va.r0.gbdt0.no.fm -out va.r0.gbdt0.no.fm.iter20.k100.out
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+Avazu App 
+///////////////////////////////////////////////////////////////////////////////
+score  (k=40):
+cmd: iter:   49 time: 1.443e+04 obj:  4278016.2 ll(train): 0.28749054 ll(test): 0.33622508
+    ./libFM -task c -method als -regular 0,1,16 -dim 0,1,40 -iter 50 -train /disk3/avazu/tr.r1.app.sp.fm -test /disk3/avazu/va.r1.app.sp.fm -out /disk3/avazu/va.r1.app.sp.fm.it_50.reg_0_1_16.dim_0_1_40.out
+/////////////
+score (k=100): iter:   49 time: 3.312e+04 obj:  4320971.6 ll(train): 0.28896898 ll(test): 0.33600519
+cmd:
+    ./libFM -task c -method als -regular 0,1,48 -dim 0,1,100 -iter 50 -train /disk3/avazu/tr.r1.app.sp.fm -test /disk3/avazu/va.r1.app.sp.fm -out /disk3/avazu/va.r1.app.sp.fm.it_50.reg_0_1_48.dim_0_1_100.out
+///////////////////////////////////////////////////////////////////////////////
+Avazu Site 
+///////////////////////////////////////////////////////////////////////////////
+score  (k=40): iter:   49 time: 2.729e+04 obj:   10989066 ll(train): 0.42219119 ll(test): 0.43871623
+    ./libFM -task c -method als -regular 0,1,16 -dim 0,1,40 -iter 50 -train /disk3/avazu/tr.r1.site.sp.fm -test /disk3/avazu/va.r1.site.sp.fm -out /disk3/avazu/va.r1.site.sp.fm.it_50.reg_0_1_16.dim_0_1_40.out
+    iter:   49 time: 5.809e+04 obj:   11040646 ll(train): 0.42311165 ll(test): 0.43809756
+/////////////
+score (k=100): iter:   49 time: 5.809e+04 obj:   11040646 ll(train): 0.42311165 ll(test): 0.43809756
+cmd:
+    ./libFM -task c -method als -regular 0,1,48 -dim 0,1,100 -iter 50 -train /disk3/avazu/tr.r1.site.sp.fm -test /disk3/avazu/va.r1.site.sp.fm -out /disk3/avazu/va.r1.site.sp.fm.it_50.reg_0_1_48.dim_0_1_100.out
+/////////////

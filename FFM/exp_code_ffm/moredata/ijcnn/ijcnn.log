@@ -1,0 +1,25 @@
+Linear, lambda = 0: 0.15628 3
+Linear, lambda = 0.000001: 0.15628 3
+Linear, lambda = 0.00001: 0.15635 3
+Linear, lambda = 0.0001: 0.15826 3
+Poly2 w/ linear, lambda = 0: 0.11855 198
+Poly2 w/ linear, lambda = 0.00001: 0.11495 196
+Poly2 w/ linear, lambda = 0.0001: 0.1329 159
+Poly2 w/ linear, lambda = 0.001: 0.16559 66
+FM w/ linear, lambda = 0.00001, k = 40: 0.078 7
+FM w/ linear, lambda = 0.00001, k = 100: 0.07582 7
+FM w/ linear, lambda = 0.0001, k = 40: 0.07688 7
+FM w/ linear, lambda = 0.0001, k = 100: 0.07543 7
+FM w/ linear, lambda = 0.001, k = 40: 0.12967 7
+FM w/ linear, lambda = 0.001, k = 100: 0.12915 7
+FFM w/ linear, lambda = 0.00001, k = 4: 0.15422 29
+FFM w/ linear, lambda = 0.00001, k = 8: 0.14583 29
+FFM w/ linear, lambda = 0.0001, k = 4: 0.12681 29
+FFM w/ linear, lambda = 0.0001, k = 8: 0.12619 29
+FFM w/ linear, lambda = 0.001, k = 4: 0.14663 3
+FFM w/ linear, lambda = 0.001, k = 8: 0.14624 3
+============test===============
+Linear: 0.20627 3
+Poly2 w/ linear: 0.09209 198
+FM w/ linear: 0.07696 7
+FFM w/ linear: 0.07668 29

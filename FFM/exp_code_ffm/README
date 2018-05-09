@@ -1,0 +1,159 @@
+This is the expreimental code for the paper:
+
+Yu-Chin Juan, Yong Zhuang, Wei-Sheng Chin, and Chih-Jen Lin. Field-aware Factorization Machines for CTR prediction, ACM Recommender Systems, 2016.
+
+Please cite the paper for the usage of this experimental code. 
+
+Data Preparation 
+================
+- Data in Section 4.5
+-- Criteo: 
+    You can download the data from the following link:
+
+        https://www.kaggle.com/c/criteo-display-ad-challenge
+    
+    then, put the downloaded file ``dac.tar.gz'' into the directory ``./data/criteo''
+
+-- Avazu:
+    You can download the data from the following link:
+
+        https://www.kaggle.com/c/avazu-ctr-prediction
+    
+    then, put the downloaded files ``train.gz'' and ``test.gz'' into ''./data/avazu''
+
+- Data in Section 4.6
+-- KDD2010-bridge
+
+    See ``readme.txt'' in ``./data/kddcup2010''
+
+
+-- KDD2012
+
+    You can download the data from the following link:
+
+        http://www.kddcup2012.org/c/kddcup2012-track2/data
+
+    then, rename the original ``training.txt" as ``kddcup2012.txt'' and put it
+    into ``./data/kddcup2012.'' See ``readme.txt'' in ``./data/kddcup2012'' for
+    remaining procedure.
+
+-- cod-rna
+
+    You can download from the following link:
+        https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
+
+    then, put it into ``./data/rna''
+
+-- ijcnn
+    
+    You can download from the following link:
+        https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
+
+    then, put it into ``./data/ijcnn''
+
+-- phishing
+
+    You can download from the following link:
+        http://archive.ics.uci.edu/ml/datasets/Phishing+Websites
+
+    then, put it into ``./data/phishing''
+
+System Requirement
+==================
+This experiment should be running under 64-bit Linux environments
+The following command are required:
+- UNIX utilities (cp, mkdir)
+- bash
+- make
+- tar
+- unzip
+- gcc with openMP support
+
+Package Requirment
+==================
+The followings are the packages required: 
+- Matplotlib
+
+Install
+=======
+- run the following command in a shell
+    $ make
+
+Experiments 
+===========
+- Criteo:
+    - The results in Table 3:
+        1. Enter the directory ''./two_comp/criteo''
+        2. run the following command in a shell:
+
+            $ ./run.criteo.table3.sh
+
+        3. Make the submission
+            (For example, ``criteo.ffm.output.sub'' is the submission file for FFMs.)
+
+    - The results in Sections 4.2 - 4.4:
+        1. Enter the directory ''./two_comp/criteo''
+        2. run the following command in a shell:
+
+            $  ./run.criteo.figure123.sh
+
+        3. There will be figures in png format.
+
+- Avazu:
+    1. Enter the directory ``./two_comp/avazu''
+    2. Run the following command in a shell:
+
+        $ ./run.avazu.table3.sh
+
+    3. Make the submission
+        (For example, ``base.r0.prd.ffm'' is the submission file for FFMs.)
+
+- KDDCup2010:
+    1. Enter the directory ``moredata/kddcup2010''
+    2. Run the following command in a shell:
+
+        $ ./run.kddcup2010.sh
+
+    3. The best result for each model will be in :
+        kddcup2010.{model_name}
+
+- KDDCup2012:
+    1. Enter the directory ``moredata/kddcup2012''
+    2. Run the following command in a shell:
+
+        $ ./run.kddcup2012.sh
+
+    3. The best result for each model will be shown in the screen
+
+- phishing
+    1. Enter the directory ``moredata/phishing''
+    2. Run the following command in a shell:
+
+        $ ./run.phishing.sh
+
+    3. The best result for each model will be in :
+        phishing.{model_name}
+
+- adult:
+    1. Enter the directory ``moredata/adult''
+    2. Run the following command in a shell:
+
+        $ ./run.adult.sh
+
+    3. The best result for each model will be shown in the screen
+
+- rna
+    1. Enter the directory ``moredata/rna''
+    2. Run the following command in a shell:
+
+        $ ./run.rna.sh
+
+    3. The best result for each model will be shown in the screen
+
+- ijcnn
+    1. Enter the directory ``moredata/ijcnn''
+    2. Run the following command in a shell:
+
+        $ ./run.ijcnn.sh
+
+    3. The best result for each model will be shown in the screen

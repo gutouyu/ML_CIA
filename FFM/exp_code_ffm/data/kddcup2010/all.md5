@@ -1,0 +1,12 @@
+4d20d4d098ef16e150f27d88b0e99752  cvt.kddb.py
+a5999681e154cdf99d9116612565bf46  kddb-raw
+df028a5f7038aa17ec141cce42de76c9  kddb-raw.ffm
+9d9fba3c3e442b1f7d85de15ea754bce  kddb-raw.svm
+c20c29f31e78b8edb71ab8b339e83a63  kddb-raw.t
+f8f7fed638ccc7415cf3dec6fd85ac93  kddb-raw.t.ffm
+48bf9a0fbc8bf1d814eeb7df24fee46f  kddb-raw.tr.tr.ffm
+fae38693ac0ba469101a9af3eae422f1  kddb-raw.t.svm
+34c9f7ad3b11a5a06a20d78b99729c24  kddb-raw.tr.te.ffm
+1ceaa4021a56c09d989a3ded240dbda2  split.py
+eb8c67800f10ca1da9b49a9d1b1fa3b6  stat.py
+594031d72a4c11f351ccdaaa103ea2d4  svmsort.py
