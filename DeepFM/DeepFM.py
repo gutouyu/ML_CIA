@@ -125,8 +125,8 @@ def parse(feat_dict=None, df=None, has_label=False):
 # 1. 配置信息
 ##################################
 
-train_file = "./tensorflow-DeepFM/example/data/train.csv"
-test_file = "./tensorflow-DeepFM/example/data/test.csv"
+train_file = "./data/train.csv"
+test_file = "./data/test.csv"
 
 IGNORE_FEATURES = [
     'id', 'target'
