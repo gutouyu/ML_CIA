@@ -1,0 +1,294 @@
+Table of Contents
+=================
+
+- What is LIBFFM
+- Overfitting and Early Stopping
+- Installation
+- Data Format
+- Command Line Usage
+- Examples
+- OpenMP and SSE
+- Building Windows Binaries
+- FAQ
+
+
+What is LIBFFM
+==============
+
+LIBFFM is a library for field-aware factorization machine (FFM). 
+
+Field-aware factorization machine is a effective model for CTR prediction. It has been used to win the top-3 positions
+of following competitions:
+
+    * Criteo: https://www.kaggle.com/c/criteo-display-ad-challenge
+
+    * Avazu: https://www.kaggle.com/c/avazu-ctr-prediction
+
+    * Outbrain: https://www.kaggle.com/c/outbrain-click-prediction
+
+    * RecSys 2015: http://dl.acm.org/citation.cfm?id=2813511&dl=ACM&coll=DL&CFID=941880276&CFTOKEN=60022934
+
+You can find more information about FFM in the following paper / slides:
+
+    * http://www.csie.ntu.edu.tw/~r01922136/slides/ffm.pdf
+
+    * http://www.csie.ntu.edu.tw/~cjlin/papers/ffm.pdf
+
+    * https://arxiv.org/abs/1701.04099
+
+
+Overfitting and Early Stopping
+==============================
+
+FFM is prone to overfitting, and the solution we have so far is early stopping. See how FFM behaves on a certain data
+set:
+
+    > ffm-train -p va.ffm -l 0.00002 tr.ffm
+    iter   tr_logloss   va_logloss
+       1      0.49738      0.48776
+       2      0.47383      0.47995
+       3      0.46366      0.47480
+       4      0.45561      0.47231
+       5      0.44810      0.47034
+       6      0.44037      0.47003
+       7      0.43239      0.46952
+       8      0.42362      0.46999
+       9      0.41394      0.47088
+      10      0.40326      0.47228
+      11      0.39156      0.47435
+      12      0.37886      0.47683
+      13      0.36522      0.47975
+      14      0.35079      0.48321
+      15      0.33578      0.48703
+
+
+We see the best validation loss is achieved at 7th iteration. If we keep training, then overfitting begins. It is worth
+noting that increasing regularization parameter do not help:
+
+    > ffm-train -p va.ffm -l 0.0002 -t 50 -s 12 tr.ffm
+    iter   tr_logloss   va_logloss
+       1      0.50532      0.49905
+       2      0.48782      0.49242
+       3      0.48136      0.48748
+                 ...
+      29      0.42183      0.47014
+                 ...
+      48      0.37071      0.47333
+      49      0.36767      0.47374
+      50      0.36472      0.47404
+
+
+To avoid overfitting, we recommend always provide a validation set with option `-p.' You can use option `--auto-stop' to
+stop at the iteration that reaches the best validation loss:
+
+    > ffm-train -p va.ffm -l 0.00002 --auto-stop tr.ffm
+    iter   tr_logloss   va_logloss
+       1      0.49738      0.48776
+       2      0.47383      0.47995
+       3      0.46366      0.47480
+       4      0.45561      0.47231
+       5      0.44810      0.47034
+       6      0.44037      0.47003
+       7      0.43239      0.46952
+       8      0.42362      0.46999
+    Auto-stop. Use model at 7th iteration.
+
+
+Installation
+============
+
+Requirement: It requires a C++11 compatible compiler. We also use OpenMP to provide multi-threading. If OpenMP is not
+available on your platform, please refer to section `OpenMP and SSE.'
+
+- Unix-like systems:
+  Typeype `make' in the command line.
+
+- Windows:
+  See `Building Windows Binaries' to compile.
+
+
+
+Data Format
+===========
+
+The data format of LIBFFM is:
+
+<label> <field1>:<feature1>:<value1> <field2>:<feature2>:<value2> ...
+.
+.
+.
+
+`field' and `feature' should be non-negative integers. See an example `bigdata.tr.txt.'
+
+It is important to understand the difference between `field' and `feature'. For example, if we have a raw data like this:
+
+Click  Advertiser  Publisher
+=====  ==========  =========
+    0        Nike        CNN
+    1        ESPN        BBC
+
+Here, we have 
+
+    * 2 fields: Advertiser and Publisher
+
+    * 4 features: Advertiser-Nike, Advertiser-ESPN, Publisher-CNN, Publisher-BBC
+
+Usually you will need to build two dictionares, one for field and one for features, like this:
+    
+    DictField[Advertiser] -> 0
+    DictField[Publisher]  -> 1
+    
+    DictFeature[Advertiser-Nike] -> 0
+    DictFeature[Publisher-CNN]   -> 1
+    DictFeature[Advertiser-ESPN] -> 2
+    DictFeature[Publisher-BBC]   -> 3
+
+Then, you can generate FFM format data:
+
+    0 0:0:1 1:1:1
+    1 0:2:1 1:3:1
+
+Note that because these features are categorical, the values here are all ones.
+
+
+Command Line Usage
+==================
+
+-   `ffm-train'
+
+    usage: ffm-train [options] training_set_file [model_file]
+
+    options:
+    -l <lambda>: set regularization parameter (default 0.00002)
+    -k <factor>: set number of latent factors (default 4)
+    -t <iteration>: set number of iterations (default 15)
+    -r <eta>: set learning rate (default 0.2)
+    -s <nr_threads>: set number of threads (default 1)
+    -p <path>: set path to the validation set
+    --quiet: quiet model (no output)
+    --no-norm: disable instance-wise normalization
+    --auto-stop: stop at the iteration that achieves the best validation loss (must be used with -p)
+
+    By default we do instance-wise normalization. That is, we normalize the 2-norm of each instance to 1. You can use
+    `--no-norm' to disable this function.
+    
+    A binary file `training_set_file.bin' will be generated to store the data in binary format.
+
+    Because FFM usually need early stopping for better test performance, we provide an option `--auto-stop' to stop at
+    the iteration that achieves the best validation loss. Note that you need to provide a validation set with `-p' when
+    you use this option.
+
+
+-   `ffm-predict'
+
+    usage: ffm-predict test_file model_file output_file
+
+
+
+Examples
+========
+
+Download a toy data from:
+
+    zip: https://www.csie.ntu.edu.tw/~f01922139/libffm_data/libffm_toy.zip
+
+    tar.gz: https://www.csie.ntu.edu.tw/~f01922139/libffm_data/libffm_toy.tar.gz
+
+This dataset is subsampled 1% from Criteo's challenge.
+
+> tar -xzf libffm_toy.tar.gz
+
+or 
+
+> unzip libffm_toy.zip
+
+
+> ./ffm-train -p libffm_toy/criteo.va.r100.gbdt0.ffm libffm_toy/criteo.tr.r100.gbdt0.ffm model
+
+train a model using the default parameters
+
+
+> ./ffm-predict libffm_toy/criteo.va.r100.gbdt0.ffm model output
+
+do prediction
+
+
+> ./ffm-train -l 0.0001 -k 15 -t 30 -r 0.05 -s 4 --auto-stop -p libffm_toy/criteo.va.r100.gbdt0.ffm libffm_toy/criteo.tr.r100.gbdt0.ffm model
+
+train a model using the following parameters:
+
+    regularization cost = 0.0001
+    latent factors = 15
+    iterations = 30
+    learning rate = 0.3
+    threads = 4
+    let it auto-stop
+
+
+OpenMP and SSE
+==============
+
+We use OpenMP to do parallelization. If OpenMP is not available on your
+platform, then please comment out the following lines in Makefile.
+
+    DFLAG += -DUSEOMP
+    CXXFLAGS += -fopenmp
+
+Note: Please run `make clean all' if these flags are changed.
+
+We use SSE instructions to perform fast computation. If you do not want to use it, comment out the following line:
+
+    DFLAG += -DUSESSE
+
+Then, run `make clean all'
+
+
+
+Building Windows Binaries
+=========================
+
+The Windows part is maintained by different maintainer, so it may not always support the latest version.
+
+The latest version it supports is: v1.21
+
+To build them via command-line tools of Visual C++, use the following steps:
+
+1. Open a DOS command box (or Developer Command Prompt for Visual Studio) and go to LIBFFM directory. If environment
+variables of VC++ have not been set, type
+
+"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\amd64\vcvars64.bat"
+
+You may have to modify the above command according which version of VC++ or
+where it is installed.
+
+2. Type
+
+nmake -f Makefile.win clean all
+
+
+FAQ
+===
+
+Q: Why I have the same model size when k = 1 and k = 4?
+
+A: This is because we use SSE instructions. In order to use SSE, the memory need to be aligned. So even you assign k =
+   1, we still fill some dummy zeros from k = 2 to 4.
+
+
+Q: Why the logloss is slightly different on the same data when I run the program two or more times when I use multi-threading
+
+A: When there are more then one thread, the program becomes non-deterministic. To make it determinisitc you can only use one thread.
+
+
+Contributors
+============
+
+Yuchin Juan, Wei-Sheng Chin, and Yong Zhuang
+
+For questions, comments, feature requests, or bug report, please send your email to:
+
+    Yuchin Juan (juan.yuchin@gmail.com)
+
+For Windows related questions, please send your email to:
+
+    Wei-Sheng Chin (image.chin@gmail.com)
