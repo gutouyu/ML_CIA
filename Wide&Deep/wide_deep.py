@@ -47,7 +47,7 @@ age_buckets = tf.feature_column.bucketized_column(
 # 2. The Wide Model: Linear Model with CrossedFeatureColumns
 """
 The wide model is a linear model with a wide set of *sparse and crossed feature* columns
-TODO: Wide部分不用连续特征吗？
+Wide部分用了一个规范化后的连续特征age_buckets，其他的连续特征没有使用
 """
 base_columns = [
     # 全是离散特征
@@ -70,14 +70,12 @@ crossed_columns = [
 3. 另外一种处理离散特征的方法是：one-hot or multi-hot representation. 但是仅仅适用于维度较低的，embedding是更加通用的做法
 4. embedding_column(embedding);indicator_column(multi-hot);
 """
-
 deep_columns = [
     age,
     education_num,
     capital_gain,
     capital_loss,
     hours_per_week,
-    # TODO:  这是在干吗？？ muti-hot怎么感觉不用呀
     tf.feature_column.indicator_column(workclass),
     tf.feature_column.indicator_column(education),
     tf.feature_column.indicator_column(marital_status),
@@ -87,8 +85,9 @@ deep_columns = [
     tf.feature_column.embedding_column(occupation, dimension=8)
 ]
 
-# 4. Combine Wide & Deep
 model_dir = './model/wide_deep'
+
+# 4. Combine Wide & Deep
 model = tf.estimator.DNNLinearCombinedClassifier(
     model_dir = model_dir,
     linear_feature_columns=base_columns + crossed_columns,

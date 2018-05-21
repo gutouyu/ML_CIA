@@ -87,8 +87,10 @@ capital_gain = tf.feature_column.numeric_column('capital_gain')
 capital_loss = tf.feature_column.numeric_column('capital_loss')
 hours_per_week = tf.feature_column.numeric_column('hours_per_week')
 
+#Sometimes the relationship between a continuous feature and the label is not linear. As a hypothetical example, a person's income may grow with age in the early stage of one's career, then the growth may slow at some point, and finally the income decreases after retirement. In this scenario, using the raw age as a real-valued feature column might not be a good choice because the model can only learn one of the three cases:
+
 # 3.2.1 连续特征离散化
-# 之所以这么做是因为：有些时候连续特征和label之间不是线性的关系。Sometimes the relationship between a continuous feature and the label is not linear. As a hypothetical example, a person's income may grow with age in the early stage of one's career, then the growth may slow at some point, and finally the income decreases after retirement. In this scenario, using the raw age as a real-valued feature column might not be a good choice because the model can only learn one of the three cases:
+# 之所以这么做是因为：有些时候连续特征和label之间不是线性的关系。
 # bucketization 装桶
 # 10个边界，11个桶
 age_buckets = tf.feature_column.bucketized_column(
@@ -126,25 +128,26 @@ crossed_column = [
     )
 ]
 
-model_dir = "./model/"
+model_dir = "./model/wide_component"
 model = tf.estimator.LinearClassifier(
     model_dir=model_dir, feature_columns=base_columns + crossed_column
 )
 
-# 5. Train & Evaluate & Predict
 train_file = './data/adult.data'
 val_file = './data/adult.data'
 test_file = './data/adult.test'
-model.train(input_fn=lambda: input_fn(data_file=train_file, num_epochs=1, shuffle=True, batch_size=512))
 
+# 5. Train & Evaluate & Predict
+model.train(input_fn=lambda: input_fn(data_file=train_file, num_epochs=1, shuffle=True, batch_size=512))
 results = model.evaluate(input_fn=lambda: input_fn(val_file, 1, False, 512))
 for key in sorted(results):
     print("{0:20}: {1:.4f}".format(key, results[key]))
 
 
 pred_iter = model.predict(input_fn=lambda: input_fn(test_file, 1, False, 1))
-for pred in pred_iter[:10]:
+for pred in pred_iter:
     print(pred)
+    break #太多了，只打印一条
 
 test_results = model.evaluate(input_fn=lambda: input_fn(test_file, 1, False, 512))
 for key in sorted(test_results):
@@ -159,16 +162,6 @@ model = tf.estimator.LinearClassifier(
         l2_regularization_strength=1.0
     )
 )
-
-
-
-
-
-
-
-
-
-
 
 
 
