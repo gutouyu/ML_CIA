@@ -5,6 +5,7 @@
 ## 2.1 广告CTR预估系列
 - [x] DeepFM
 - [x] FFM
+- [x] Wide & Deep
 
 ## 2.2 学习笔记
 - [x] Batch Normalization

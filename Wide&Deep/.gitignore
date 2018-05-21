@@ -1,5 +1,5 @@
 model/
 data/adult.data
 data/adult.test
-./absl_example.py
-./origin_wide_deep.py
+/absl_example.py
+/origin_wide_deep.py
