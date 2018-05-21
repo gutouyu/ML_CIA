@@ -3,5 +3,8 @@
 
 下载： `python data_download.py`
 
-# Logistic Regression Model
-`python `
+# Wide Linear Model
+`wide_component.py`
+
+# Wide & Deep Model
+`wide_deep.py`
