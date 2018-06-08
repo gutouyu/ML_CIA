@@ -90,7 +90,7 @@ hours_per_week = tf.feature_column.numeric_column('hours_per_week')
 #Sometimes the relationship between a continuous feature and the label is not linear. As a hypothetical example, a person's income may grow with age in the early stage of one's career, then the growth may slow at some point, and finally the income decreases after retirement. In this scenario, using the raw age as a real-valued feature column might not be a good choice because the model can only learn one of the three cases:
 
 # 3.2.1 连续特征离散化
-# 之所以这么做是因为：有些时候连续特征和label之间不是线性的关系。
+# 之所以这么做是因为：有些时候连续特征和label之间不是线性的关系。可能刚开始是正的线性关系，后面又变成了负的线性关系，这样一个折线的关系整体来看就不再是线性关系。
 # bucketization 装桶
 # 10个边界，11个桶
 age_buckets = tf.feature_column.bucketized_column(
