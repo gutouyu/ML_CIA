@@ -6,9 +6,14 @@
 - [x] DeepFM
 - [x] FFM
 - [x] Wide & Deep
+- [x] DIN
+- [x] MLP(LS-PLM)
+- [x] FM
+
 
 ## 2.2 学习笔记
 - [x] Batch Normalization
+- [x] TensorLayer
 
 # 3. 贡献
 欢迎任何形式的投稿、issue、PR
