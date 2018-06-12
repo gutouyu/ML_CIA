@@ -3,13 +3,13 @@
 
 # 2. 内容
 ## 2.1 广告CTR预估系列
-- [x] DeepFM
+- [x] FM
 - [x] FFM
 - [x] Wide & Deep
+- [x] DeepFM
 - [x] DIN
 - [x] MLP(LS-PLM)
-- [x] FM
-
+- [x] Logistic Regression + GBDT
 
 ## 2.2 学习笔记
 - [x] Batch Normalization

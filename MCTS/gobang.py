@@ -164,14 +164,14 @@ class GameState:
                     continue
 
                 # 行
-                if (col + n < cols) and (len(set(self.checkerboard[row, j] for j in range(col ,col + n))) == 1):
+                if (col + n - 1< cols) and (len(set(self.checkerboard[row, j] for j in range(col ,col + n))) == 1):
                     if playerjm == player:
                         return 1.0
                     else:
                         return 0.0
 
                 # 列
-                if (row + n < rows) and (len(set(self.checkerboard[i, col] for i in range(row, row + n))) == 1):
+                if (row + n - 1< rows) and (len(set(self.checkerboard[i, col] for i in range(row, row + n))) == 1):
                     if playerjm == player:
                         return 1.0
                     else:
@@ -414,15 +414,15 @@ def UCTPlayGame(window):
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
-    window = Graph()
-    global player_id
-    global player_move
-    global msg
-
-    game = threading.Thread(target=UCTPlayGame, args=(window,))
-    game.start()
-
-    window.show()
+    # window = Graph()
+    # global player_id
+    # global player_move
+    # global msg
+    #
+    # game = threading.Thread(target=UCTPlayGame, args=(window,))
+    # game.start()
+    #
+    # window.show()
 
     # state = GameState(board_sz=7, win_num=5)
     # state.checkerboard[0, :5] = 1
@@ -440,8 +440,14 @@ if __name__ == "__main__":
     # assert state.GetResult(1) == 1.0
     #
     # state.checkerboard[:,:] = 0
-    # for i in range(5):
+    # for i in range(5):#刨除每一行的最后一列
     #     state.checkerboard[i, 5-i] = 1
+    # print(state.checkerboard)
+    # assert state.GetResult(1) == 1.0
+    #
+    # state = GameState(board_sz=10, win_num=5)
+    # state.checkerboard[0, 5:] = 1
+    # print(state.checkerboard[0])
     # assert state.GetResult(1) == 1.0
 
 
