@@ -414,15 +414,15 @@ def UCTPlayGame(window):
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
-    # window = Graph()
-    # global player_id
-    # global player_move
-    # global msg
-    #
-    # game = threading.Thread(target=UCTPlayGame, args=(window,))
-    # game.start()
-    #
-    # window.show()
+    window = Graph()
+    global player_id
+    global player_move
+    global msg
+
+    game = threading.Thread(target=UCTPlayGame, args=(window,))
+    game.start()
+
+    window.show()
 
     # state = GameState(board_sz=7, win_num=5)
     # state.checkerboard[0, :5] = 1
