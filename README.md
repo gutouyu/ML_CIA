@@ -15,6 +15,9 @@
 - [x] Batch Normalization
 - [x] TensorLayer
 
+## 2.3 Have Fun
+- [x] 蒙特卡洛树搜索 五子棋程序
+
 # 3. 贡献
 欢迎任何形式的投稿、issue、PR
 
