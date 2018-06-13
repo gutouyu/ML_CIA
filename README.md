@@ -9,7 +9,7 @@
 - [x] DeepFM
 - [x] DIN
 - [x] MLP(LS-PLM)
-- [x] Logistic Regression + GBDT
+- [x] LR(Logistic Regression) + GBDT
 
 ## 2.2 学习笔记
 - [x] Batch Normalization
