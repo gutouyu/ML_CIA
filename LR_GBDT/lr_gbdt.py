@@ -6,8 +6,6 @@ from sklearn.model_selection import train_test_split
 
 # 1. 读取数据
 path = "./data/"
-train_file = "train.tiny.csv"
-test_file = "test.tiny.csv"
 train_file = "train3.csv"
 test_file = "test3.csv"
 
