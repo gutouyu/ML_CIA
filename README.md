@@ -10,6 +10,7 @@
 - [x] DIN
 - [x] MLP(LS-PLM)
 - [x] LR(Logistic Regression) + GBDT
+- [x] PNN
 
 ## 2.2 学习笔记
 - [x] Batch Normalization
