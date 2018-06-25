@@ -2,21 +2,8 @@
 #coding=utf-8
 """
 TensorFlow Implementation of <<Neural Factorization Machines for Sparse Predictive Analytics>> with the fellowing features：
-#1 Input pipline using Dataset high level API, Support parallel and prefetch reading
-#2 Train pipline using Coustom Estimator by rewriting model_fn
-#3 Support distincted training by TF_CONFIG
-#4 Support export model for TensorFlow Serving
-
-by lambdaji
 """
 
-import shutil
-import os
-import json
-import glob
-from datetime import date, timedelta
-
-import random
 import tensorflow as tf
 
 def input_fn(filenames, batch_size=32, num_epochs=1, perform_shuffle=False):
@@ -181,7 +168,6 @@ model_params = {
 }
 classifier = tf.estimator.Estimator(model_fn=model_fn,model_dir='./model_save', params=model_params)  # Path to where checkpoints etc are stored
 
-path_iris = '../EveryTestInOne/data/dataset/'
 train_file = './data/ml-tag.train.libfm'
 test_file = './data/ml-tag.test.libfm'
 val_file = './data/ml-tag.validation.libfm'
@@ -189,15 +175,15 @@ val_file = './data/ml-tag.validation.libfm'
 print("训练......")
 # 500 epochs = 500 * 120 records [60000] = (500 * 120) / 32 batches = 1875 batches
 # 4 epochs = 4 * 30 records = (4 * 30) / 32 batches = 3.75 batches
-classifier.train(input_fn=lambda: input_fn(path_iris + "iris_training.csv", 256, 1, True))
+classifier.train(input_fn=lambda: input_fn(train_file, 256, 1, True))
 
 print("评估......")
-evaluate_result = classifier.evaluate(input_fn=lambda: input_fn(path_iris+"iris_test.csv", 256, 1, False))
+evaluate_result = classifier.evaluate(input_fn=lambda: input_fn(val_file, 256, 1, False))
 for key in evaluate_result:
     tf.logging.info("{}, was: {}".format(key, evaluate_result[key]))
 
 print("预测......")
-predict_results = classifier.predict(input_fn=lambda: input_fn(path_iris + "iris_test.csv", 256, 1, False))
+predict_results = classifier.predict(input_fn=lambda: input_fn(test_file, 256, 1, False))
 tf.logging.info("Prediction on test file")
 for prediction in predict_results:
     tf.logging.info("{}".format(prediction["prob"]))
@@ -205,6 +191,6 @@ for prediction in predict_results:
 
 
 # eval on Test
-evaluate_result_test = classifier.evaluate(input_fn = lambda:input_fn("./data/ml-tag.test.libfm", 256, 1, False))
+evaluate_result_test = classifier.evaluate(input_fn = lambda:input_fn(test_file, 256, 1, False))
 for  key in evaluate_result_test:
     tf.logging.info("{0}, was: {1}".format(key, evaluate_result_test[key]))
