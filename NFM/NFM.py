@@ -5,7 +5,7 @@ TensorFlow Implementation of <<Neural Factorization Machines for Sparse Predicti
 """
 
 import tensorflow as tf
-
+#0 1:0.05 2:0.006633 3:0.05 4:0 5:0.021594 6:0.008 7:0.15 8:0.04 9:0.362 10:0.1 11:0.2 12:0 13:0.04 15:1 555:1 1078:1 17797:1 26190:1 26341:1 28570:1 35361:1 35613:1 35984:1 48424:1 51364:1 64053:1 65964:1 66206:1 71628:1 84088:1 84119:1 86889:1 88280:1 88283:1
 def input_fn(filenames, batch_size=32, num_epochs=1, perform_shuffle=False):
     print('Parsing', filenames)
     def decode_libsvm(line):
@@ -19,7 +19,7 @@ def input_fn(filenames, batch_size=32, num_epochs=1, perform_shuffle=False):
         return {"feat_ids": feat_ids, "feat_vals": feat_vals}, labels
 
     # Extract lines from input files using the Dataset API, can pass one filename or filename list
-    dataset = tf.data.TextLineDataset(filenames).map(decode_libsvm, num_parallel_calls=10).prefetch(100)
+    dataset = tf.data.TextLineDataset(filenames).map(decode_libsvm, num_parallel_calls=10).prefetch(1000)
 
     # Randomizes input using a window of 256 elements (read into memory)
     if perform_shuffle:
@@ -32,6 +32,12 @@ def input_fn(filenames, batch_size=32, num_epochs=1, perform_shuffle=False):
     iterator = dataset.make_one_shot_iterator()
     batch_features, batch_labels = iterator.get_next()
     return batch_features, batch_labels
+
+def batch_norm_layer(x, train_phase, scope_bn):
+    bn_train = tf.contrib.layers.batch_norm(x, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=None, scope=scope_bn)
+    bn_infer = tf.contrib.layers.batch_norm(x, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=True, scope=scope_bn)
+    z = tf.cond(tf.cast(train_phase, tf.bool), lambda: bn_train, lambda: bn_infer)
+    return z
 
 def model_fn(features, labels, mode, params):
     """Build Model function f(x) for Estimator."""
@@ -76,13 +82,19 @@ def model_fn(features, labels, mode, params):
 
     with tf.variable_scope("Deep-part"):
 
-        # BI的输出需要进行Batch Normalization
-        if mode == tf.estimator.ModeKeys.TRAIN: # batch norm at bilinear interaction layer
-            deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=None, trainable=True, scope="bn_after_bi")
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_phase = True
         else:
-            deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope='bn_after_bi')
+            train_phase = False
 
-        # Dropout
+        # BI的输出需要进行Batch Normalization
+        deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn_after_bi")
+        # if mode == tf.estimator.ModeKeys.TRAIN: # batch norm at bilinear interaction layer
+        #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=None, trainable=True, scope="bn_after_bi")
+        # else:
+        #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope='bn_after_bi')
+
+        # BI的输出进行Dropout
         if mode == tf.estimator.ModeKeys.TRAIN:
             deep_inputs = tf.nn.dropout(deep_inputs, keep_prob=dropout[-1]) # dropout at bilinear interaction layer
 
@@ -91,10 +103,11 @@ def model_fn(features, labels, mode, params):
 
             # 注意是先进行Batch Norm，再进行Dropout
             # Batch Normalization
-            if mode == tf.estimator.ModeKeys.TRAIN:
-                deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=False, trainable=True, scope="bn%d" % i)
-            else:
-                deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope="bn%d" % i)
+            deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn%d" % i)
+            # if mode == tf.estimator.ModeKeys.TRAIN:
+            #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=False, trainable=True, scope="bn%d" % i)
+            # else:
+            #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope="bn%d" % i)
 
             # Dropout
             if mode == tf.estimator.ModeKeys.TRAIN:
@@ -120,7 +133,7 @@ def model_fn(features, labels, mode, params):
             export_outputs=export_outputs)
 
     #------build loss------
-    loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels)) + l2_reg * tf.nn.l2_loss(Feat_Wgts) + l2_reg * tf.nn.l2_loss(Feat_Emb)
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels)) + l2_reg * tf.nn.l2_loss(Feat_Wgts) + l2_reg * tf.nn.l2_loss(Feat_Emb)
 
     # Provide an estimator spec for `ModeKeys.EVAL`
     eval_metric_ops = {
@@ -156,21 +169,25 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 print("构建分类器......")
 model_params = {
-    # 'field_size':3,
-    # 'feature_size': 90445,
-    'field_size':4,
-    'feature_size': 4,
-    'embedding_size': 16,
-    'l2_reg': 0.01,
-    'learning_rate': 0.01,
-    'layers':[256],
-    'dropout':[0.5, 0.8] # 最后一个是BI输出的keep_prob
+    'field_size': 13 + 26,
+    'feature_size': 117581,
+    'embedding_size': 64,
+    'l2_reg': 0.0005,
+    'learning_rate': 0.001,
+    'layers':[400,400,400],
+    'dropout':[0.5, 0.5, 0.5] # 最后一个是BI输出的keep_prob
 }
-classifier = tf.estimator.Estimator(model_fn=model_fn,model_dir='./model_save', params=model_params)  # Path to where checkpoints etc are stored
 
-train_file = './data/ml-tag.train.libfm'
-test_file = './data/ml-tag.test.libfm'
-val_file = './data/ml-tag.validation.libfm'
+log_steps = 1000
+config = tf.estimator.RunConfig().replace(
+    session_config=tf.ConfigProto(device_count={'GPU': 0, 'CPU': 10}),
+    log_step_count_steps=log_steps, save_summary_steps=log_steps)
+classifier = tf.estimator.Estimator(model_fn=model_fn,model_dir='./model_save', params=model_params, config=config)  # Path to where checkpoints etc are stored
+
+train_file = '../EveryTestInOne/criteo/tr.libsvm'
+test_file = './EveryTestInOne/criteo/te.libsvm'
+val_file = './EveryTestInOne/criteo/va.libsvm'
+
 
 print("训练......")
 # 500 epochs = 500 * 120 records [60000] = (500 * 120) / 32 batches = 1875 batches
