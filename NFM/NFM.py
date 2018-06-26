@@ -89,10 +89,6 @@ def model_fn(features, labels, mode, params):
 
         # BI的输出需要进行Batch Normalization
         deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn_after_bi")
-        # if mode == tf.estimator.ModeKeys.TRAIN: # batch norm at bilinear interaction layer
-        #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=None, trainable=True, scope="bn_after_bi")
-        # else:
-        #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope='bn_after_bi')
 
         # BI的输出进行Dropout
         if mode == tf.estimator.ModeKeys.TRAIN:
@@ -104,10 +100,6 @@ def model_fn(features, labels, mode, params):
             # 注意是先进行Batch Norm，再进行Dropout
             # Batch Normalization
             deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn%d" % i)
-            # if mode == tf.estimator.ModeKeys.TRAIN:
-            #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=True, reuse=False, trainable=True, scope="bn%d" % i)
-            # else:
-            #     deep_inputs = tf.contrib.layers.batch_norm(deep_inputs, decay=0.9, center=True, scale=True, updates_collections=None, is_training=False, reuse=tf.AUTO_REUSE, trainable=True, scope="bn%d" % i)
 
             # Dropout
             if mode == tf.estimator.ModeKeys.TRAIN:
