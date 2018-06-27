@@ -12,6 +12,7 @@
 - [x] LR(Logistic Regression) + GBDT
 - [x] PNN（IPNN OPNN PNN*）
 - [x] NFM
+- [x] AFM
 
 ## 2.2 学习笔记
 - [x] Batch Normalization
