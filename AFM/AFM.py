@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 #coding=utf-8
 """
-TensorFlow Implementation of <<Neural Factorization Machines for Sparse Predictive Analytics>> with the fellowing features：
+TensorFlow Implementation of AFM
 """
 
 import tensorflow as tf
+import tensorflow.contrib as contrib
 #0 1:0.05 2:0.006633 3:0.05 4:0 5:0.021594 6:0.008 7:0.15 8:0.04 9:0.362 10:0.1 11:0.2 12:0 13:0.04 15:1 555:1 1078:1 17797:1 26190:1 26341:1 28570:1 35361:1 35613:1 35984:1 48424:1 51364:1 64053:1 65964:1 66206:1 71628:1 84088:1 84119:1 86889:1 88280:1 88283:1
 def input_fn(filenames, batch_size=32, num_epochs=1, perform_shuffle=False):
     print('Parsing', filenames)
@@ -48,74 +49,86 @@ def model_fn(features, labels, mode, params):
     embedding_size = params['embedding_size']
     l2_reg = params['l2_reg']
     learning_rate = params['learning_rate']
-    dropout = params['dropout']
-    layers = params['layers']
 
+    dropout = params['dropout']
+    attention_factor = params['attention_factor']
 
     #------build weights------
-    Global_Bias = tf.get_variable(name='bias', shape=[1], initializer=tf.constant_initializer(0.0))
-    Feat_Wgts = tf.get_variable(name='linear', shape=[feature_size], initializer=tf.glorot_normal_initializer())
-    Feat_Emb = tf.get_variable(name='emb', shape=[feature_size, embedding_size], initializer=tf.glorot_normal_initializer())
+    Global_Bias = tf.get_variable("bias", shape=[1], initializer=tf.constant_initializer(0.0))
+    Feat_Wgts = tf.get_variable("linear", shape=[feature_size], initializer=tf.glorot_normal_initializer())
+    Feat_Emb = tf.get_variable("emb", shape=[feature_size, embedding_size], initializer=tf.glorot_normal_initializer())
 
     #------build feature------
     feat_ids = features['feat_ids']
-    feat_ids = tf.reshape(feat_ids, shape=[-1, field_size])
     feat_vals = features['feat_vals']
-    feat_vals = tf.reshape(feat_vals, shape=[-1, field_size])
+    feat_ids = tf.reshape(feat_ids, shape=[-1, field_size])
+    feat_vals = tf.reshape(feat_vals, shape=[-1, field_size]) # None * F
 
     #------build f(x)------
-    # f(x) = bias + sum(wx) + MLP(BI(embed_vec))
 
-    # FM部分
+    # FM部分: sum(wx)
     with tf.variable_scope("Linear-part"):
         feat_wgts = tf.nn.embedding_lookup(Feat_Wgts, feat_ids) # None * F * 1
-        y_linear = tf.reduce_sum(tf.multiply(feat_wgts, feat_vals), 1)  # None * 1
+        y_linear = tf.reduce_sum(tf.multiply(feat_wgts, feat_vals), 1)
 
-
-    with tf.variable_scope("BiInter-part"):
-        embeddings = tf.nn.embedding_lookup(Feat_Emb, feat_ids) # None * F * k
+    #Deep部分
+    with tf.variable_scope("Embedding_Layer"):
+        embeddings = tf.nn.embedding_lookup(Feat_Emb, feat_ids) # None * F * K
         feat_vals = tf.reshape(feat_vals, shape=[-1, field_size, 1]) # None * F * 1
-        embeddings = tf.multiply(embeddings, feat_vals) # vi * xi
-        sum_square_emb = tf.square(tf.reduce_sum(embeddings, 1))
-        square_sum_emb = tf.reduce_sum(tf.square(embeddings), 1)
-        deep_inputs = 0.5 * tf.subtract(sum_square_emb, square_sum_emb) # None * k
+        embeddings = tf.multiply(embeddings, feat_vals) # None * F * K
 
-    with tf.variable_scope("Deep-part"):
 
+    with tf.variable_scope("Pair-wise_Interaction_Layer"):
+        num_interactions = field_size * (field_size - 1) / 2
+        element_wise_product_list = []
+        for i in range(0, field_size):
+            for j in range(i + 1, field_size):
+                element_wise_product_list.append(tf.multiply(embeddings[:, i, :], embeddings[:, j, :]))
+        element_wise_product_list = tf.stack(element_wise_product_list) # (F*(F-1)/2) * None * K stack拼接矩阵
+        element_wise_product_list = tf.transpose(element_wise_product_list, perm=[1,0,2]) # None * (F(F-1)/2) * K
+
+    # 得到Attention Score
+    with tf.variable_scope("Attention_Netowrk"):
+
+        deep_inputs = tf.reshape(element_wise_product_list, shape=[-1, embedding_size]) # (None*F(F-1)/2) * K
+
+        deep_inputs = contrib.layers.fully_connected(inputs=deep_inputs, num_outputs=attention_factor, activation_fn=tf.nn.relu, \
+                                             weights_regularizer=contrib.layers.l2_regularizer(l2_reg), scope="attention_net_mlp")
+
+        aij = contrib.layers.fully_connected(inputs=deep_inputs, num_outputs=1, activation_fn=tf.identity, \
+                                             weights_regularizer=contrib.layers.l2_regularizer(l2_reg), scope="attention_net_out") # (None*F(F-1)/2) * 1
+
+        # 得到attention score之后，使用softmax进行规范化
+        aij = tf.reshape(aij, shape=[-1, int(num_interactions), 1])
+        aij_softmax = tf.nn.softmax(aij, dim=1, name="attention_net_softout") # None * num_interactions
+
+        # TODO: 为什么要对attention score进行dropout那？? 这里不是很懂
         if mode == tf.estimator.ModeKeys.TRAIN:
-            train_phase = True
-        else:
-            train_phase = False
+            aij_softmax = tf.nn.dropout(aij_softmax, keep_prob=dropout[0])
 
-        # BI的输出需要进行Batch Normalization
-        deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn_after_bi")
+    with tf.variable_scope("Attention-based_Pooling_Layer"):
+        deep_inputs = tf.multiply(element_wise_product_list, aij_softmax) # None * (F(F-1)/2) * K
+        deep_inputs = tf.reduce_sum(deep_inputs, axis=1) # None * K Pooling操作
 
-        # BI的输出进行Dropout
+        # Attention-based Pooling Layer的输出也要经过Dropout
         if mode == tf.estimator.ModeKeys.TRAIN:
-            deep_inputs = tf.nn.dropout(deep_inputs, keep_prob=dropout[-1]) # dropout at bilinear interaction layer
+            deep_inputs = tf.nn.dropout(deep_inputs, keep_prob=dropout[1])
 
-        for i in range(len(layers)):
-            deep_inputs = tf.contrib.layers.fully_connected(inputs=deep_inputs, num_outputs=layers[i], weights_regularizer=tf.contrib.layers.l2_regularizer(l2_reg), scope="mlp%d" % i)
+        # 该层的输出是一个K维度的向量
 
-            # 注意是先进行Batch Norm，再进行Dropout
-            # Batch Normalization
-            deep_inputs = batch_norm_layer(deep_inputs, train_phase=train_phase, scope_bn="bn%d" % i)
+    with tf.variable_scope("Prediction_Layer"):
+        # 直接跟上输出单元
+        deep_inputs = contrib.layers.fully_connected(inputs=deep_inputs, num_outputs=1, activation_fn=tf.identity, \
+                                             weights_regularizer=contrib.layers.l2_regularizer(l2_reg), scope="afm_out") # None * 1
+        y_deep = tf.reshape(deep_inputs, shape=[-1]) # None
 
-            # Dropout
-            if mode == tf.estimator.ModeKeys.TRAIN:
-                deep_inputs = tf.nn.dropout(deep_inputs, keep_prob=dropout[i])
+    with tf.variable_scope("AFM_overall"):
+        y_bias = Global_Bias * tf.ones_like(y_deep, dtype=tf.float32)
+        y = y_bias + y_linear + y_deep
+        pred = tf.nn.sigmoid(y)
 
-        # Output
-        y_deep = tf.contrib.layers.fully_connected(inputs=deep_inputs, num_outputs=1, activation_fn=tf.identity, weights_regularizer=tf.contrib.layers.l2_regularizer(l2_reg), scope="deep_out")
-        y_d = tf.reshape(y_deep, shape=[-1])
-
-    with tf.variable_scope("NFM-out"):
-        y_bias = Global_Bias * tf.ones_like(y_d, dtype=tf.float32)
-        y = y_bias + y_linear + y_d
-        pred = tf.sigmoid(y)
-
+    # set predictions
     predictions = {"prob": pred}
-
     export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput(predictions)}
     # Provide an estimator spec for `ModeKeys.PREDICT`
     if mode == tf.estimator.ModeKeys.PREDICT:
@@ -126,7 +139,6 @@ def model_fn(features, labels, mode, params):
 
     #------build loss------
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels)) + l2_reg * tf.nn.l2_loss(Feat_Wgts) + l2_reg * tf.nn.l2_loss(Feat_Emb)
-
     # Provide an estimator spec for `ModeKeys.EVAL`
     eval_metric_ops = {
         "auc": tf.metrics.auc(labels, pred)
@@ -138,13 +150,12 @@ def model_fn(features, labels, mode, params):
             loss=loss,
             eval_metric_ops=eval_metric_ops)
 
+
     #------build optimizer------
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8)
-
     train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
 
-
-    # Provide an estimator spec for `ModeKeys.TRAIN` modes
+    # Provide an estimator spec for `ModeKeys.TRAIN`
     if mode == tf.estimator.ModeKeys.TRAIN:
         return tf.estimator.EstimatorSpec(
             mode=mode,
@@ -166,24 +177,34 @@ model_params = {
     'embedding_size': 64,
     'l2_reg': 0.0005,
     'learning_rate': 0.001,
-    'layers':[400,400,400],
-    'dropout':[0.5, 0.5, 0.5] # 最后一个是BI输出的keep_prob
+    'dropout':[0.5,0.5], # 分别表示Attention Network， Attention-based Pooling Layer的输出的dropout
+    'attention_factor': 256, # attention network是一个one-layer MLP, 表示其神经元个数
+    'train_or_debug': "debug",
 }
 
-log_steps = 1000
+
+if model_params['train_or_debug'] == "train":
+    train_file = '../EveryTestInOne/criteo/tr.libsvm'
+    test_file = '../EveryTestInOne/criteo/te.libsvm'
+    val_file = '../EveryTestInOne/criteo/va.libsvm'
+    log_steps = 1000
+else:
+    # prefetch the head for 10000 rows, just for debug
+    # train_file = '../EveryTestInOne/criteo/tr.mini.libsvm'
+    # test_file = '../EveryTestInOne/criteo/te.mini.libsvm'
+    # val_file = '../EveryTestInOne/criteo/va.mini.libsvm'
+    train_file = './data/tr.mini.libsvm'
+    test_file = './data/te.mini.libsvm'
+    val_file = './data/va.mini.libsvm'
+    log_steps = 3
+
+print("初始化......")
 config = tf.estimator.RunConfig().replace(
     session_config=tf.ConfigProto(device_count={'GPU': 0, 'CPU': 10}),
     log_step_count_steps=log_steps, save_summary_steps=log_steps)
 classifier = tf.estimator.Estimator(model_fn=model_fn,model_dir='./model_save', params=model_params, config=config)  # Path to where checkpoints etc are stored
 
-train_file = '../EveryTestInOne/criteo/tr.libsvm'
-test_file = '../EveryTestInOne/criteo/te.libsvm'
-val_file = '../EveryTestInOne/criteo/va.libsvm'
-
-
 print("训练......")
-# 500 epochs = 500 * 120 records [60000] = (500 * 120) / 32 batches = 1875 batches
-# 4 epochs = 4 * 30 records = (4 * 30) / 32 batches = 3.75 batches
 classifier.train(input_fn=lambda: input_fn(train_file, 256, 1, True))
 
 print("评估......")
@@ -193,13 +214,7 @@ for key in evaluate_result:
 
 print("预测......")
 predict_results = classifier.predict(input_fn=lambda: input_fn(test_file, 256, 1, False))
-tf.logging.info("Prediction on test file")
 for prediction in predict_results:
     tf.logging.info("{}".format(prediction["prob"]))
     break
 
-
-# eval on Test
-evaluate_result_test = classifier.evaluate(input_fn = lambda:input_fn(test_file, 256, 1, False))
-for  key in evaluate_result_test:
-    tf.logging.info("{0}, was: {1}".format(key, evaluate_result_test[key]))
