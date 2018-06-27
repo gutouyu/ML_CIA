@@ -183,11 +183,11 @@ model_params = {
 }
 
 
+log_steps = 10
 if model_params['train_or_debug'] == "train":
     train_file = '../EveryTestInOne/criteo/tr.libsvm'
     test_file = '../EveryTestInOne/criteo/te.libsvm'
     val_file = '../EveryTestInOne/criteo/va.libsvm'
-    log_steps = 1000
 else:
     # prefetch the head for 10000 rows, just for debug
     # train_file = '../EveryTestInOne/criteo/tr.mini.libsvm'
@@ -196,7 +196,6 @@ else:
     train_file = './data/tr.mini.libsvm'
     test_file = './data/te.mini.libsvm'
     val_file = './data/va.mini.libsvm'
-    log_steps = 3
 
 print("初始化......")
 config = tf.estimator.RunConfig().replace(
