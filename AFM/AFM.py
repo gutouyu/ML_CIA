@@ -138,11 +138,16 @@ def model_fn(features, labels, mode, params):
             export_outputs=export_outputs)
 
     #------build loss------
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels)) + l2_reg * tf.nn.l2_loss(Feat_Wgts) + l2_reg * tf.nn.l2_loss(Feat_Emb)
+    loss =  tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels))+ l2_reg * tf.nn.l2_loss(Feat_Wgts) + l2_reg * tf.nn.l2_loss(Feat_Emb)
+    log_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=labels))
+
+
     # Provide an estimator spec for `ModeKeys.EVAL`
     eval_metric_ops = {
-        "auc": tf.metrics.auc(labels, pred)
+        # "logloss": tf.losses.log_loss(pred, labels, weights=1.0, scope=None, epsilon=1e-07,loss_collection=tf.GraphKeys.LOSSES, reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS),
+        "auc": tf.metrics.auc(labels, pred),
     }
+
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(
             mode=mode,
@@ -160,7 +165,7 @@ def model_fn(features, labels, mode, params):
         return tf.estimator.EstimatorSpec(
             mode=mode,
             predictions=predictions,
-            loss=loss,
+            loss=log_loss, # 只打印pure log_loss，但是训练依旧按照整个的loss来训练
             train_op=train_op)
 
 
@@ -208,6 +213,10 @@ classifier.train(input_fn=lambda: input_fn(train_file, 256, 1, True))
 
 print("评估......")
 evaluate_result = classifier.evaluate(input_fn=lambda: input_fn(val_file, 256, 1, False))
+for key in evaluate_result:
+    tf.logging.info("{}, was: {}".format(key, evaluate_result[key]))
+
+evaluate_result = classifier.evaluate(input_fn=lambda: input_fn(train_file, 256, 1, False))
 for key in evaluate_result:
     tf.logging.info("{}, was: {}".format(key, evaluate_result[key]))
 

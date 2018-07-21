@@ -13,6 +13,7 @@
 - [x] PNN（IPNN OPNN PNN*）
 - [x] NFM
 - [x] AFM
+- [x] DCN Deep Cross Network
 
 ## 2.2 学习笔记
 - [x] Batch Normalization
@@ -28,5 +29,5 @@
 获取更多机器学习、深度学习荐货，干货，欢迎关注**机器学习荐货推荐局**
 
 
-![机器学习荐货推荐局](./Pictures/公众号.jpg)
+![机器学习荐货情报局](./Pictures/公众号.jpg)
 
