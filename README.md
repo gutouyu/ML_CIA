@@ -15,11 +15,17 @@
 - [x] AFM
 - [x] DCN Deep Cross Network
 
-## 2.2 学习笔记
+## 2.2 推荐系统
+- [x] Deep Neural Network for Youtube Recommendations
+
+## 2.3 深度学习
+- [x] LSTM原理与实践
+
+## 2.4 学习笔记
 - [x] Batch Normalization
 - [x] TensorLayer
 
-## 2.3 Have Fun
+## 2.5 Have Fun
 - [x] 蒙特卡洛树搜索 五子棋程序
 
 # 3. 贡献
